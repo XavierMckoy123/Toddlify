@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Toddly</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="auth-container">
+            <div class="logo">Toddly</div>
+
+            <form class="auth-form" id="signupForm">
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        placeholder="your@email.com"
+                        required
+                        autocomplete="email"
+                    />
+                    <div class="validation-hint" id="emailHint"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        placeholder="Choose a username"
+                        required
+                        autocomplete="username"
+                    />
+                    <div class="validation-hint" id="usernameHint"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="firstName">First Name (optional)</label>
+                    <input
+                        type="text"
+                        id="firstName"
+                        name="firstName"
+                        placeholder="Your first name"
+                        autocomplete="given-name"
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name (optional)</label>
+                    <input
+                        type="text"
+                        id="lastName"
+                        name="lastName"
+                        placeholder="Your last name"
+                        autocomplete="family-name"
+                    />
+                </div>
+
+                <div class="form-group password-group">
+                    <label for="password">Password</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Min 8 chars: uppercase, lowercase, number"
+                        required
+                        autocomplete="new-password"
+                    />
+                    <span class="password-toggle" id="passwordToggle">Show</span>
+                    <div class="password-strength" id="passwordStrength"></div>
+                    <div class="validation-hint" id="passwordHint"></div>
+                </div>
+
+                <div class="form-group password-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input
+                        type="password"
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        required
+                        autocomplete="new-password"
+                    />
+                    <span class="password-toggle" id="confirmPasswordToggle">Show</span>
+                    <div class="validation-hint" id="confirmPasswordHint"></div>
+                </div>
+
+                <div class="checkbox-group">
+                    <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
+                    <label for="agreeTerms" class="checkbox-label">
+                        I agree to the Terms of Service
+                    </label>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                    Create Account
+                </button>
+            </form>
+
+            <div class="form-footer">
+                Already have an account? <a href="login.html">Log in</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="signup.js"></script>
+</body>
+</html>

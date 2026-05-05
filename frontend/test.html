@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toddly Frontend Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #fafafa;
+            padding: 20px;
+            color: #262626;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #405de6;
+        }
+
+        .subtitle {
+            color: #999;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #dbdbdb;
+            border-radius: 8px;
+        }
+
+        .test-section h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #262626;
+        }
+
+        .test-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .test-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-checkbox {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+            accent-color: #405de6;
+        }
+
+        .test-label {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .test-status {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-pass {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-fail {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .status-pending {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            background: #405de6;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button.secondary {
+            background: #dbdbdb;
+            color: #262626;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 8px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #dbdbdb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4caf50;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .summary-item {
+            padding: 15px;
+            background: white;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 28px;
+            font-weight: bold;
+            color: #405de6;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+
+        .api-test-results {
+            background: white;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+            border-left: 4px solid #4caf50;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .api-test-results.error {
+            border-left-color: #f44336;
+            background: #ffebee;
+        }
+
+        .api-test-results.warning {
+            border-left-color: #ff9800;
+            background: #fff3e0;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Toddly Frontend Test Suite</h1>
+        <p class="subtitle">Interactive test checklist for authentication pages</p>
+
+        <div class="controls">
+            <button onclick="runAutoTests()">Run Auto Tests</button>
+            <button class="secondary" onclick="resetTests()">Reset All</button>
+            <button class="secondary" onclick="exportResults()">Export Results</button>
+        </div>
+
+        <div class="results">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div id="statusText" style="color: #999; font-size: 14px;">Ready to test...</div>
+        </div>
+
+        <!-- Manual Test Checklist -->
+        <div class="test-section">
+            <h2>1. Signup Form Validation</h2>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-1">
+                <label for="test-1-1" class="test-label">Email validation accepts valid format</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-2">
+                <label for="test-1-2" class="test-label">Email validation rejects invalid format</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-3">
+                <label for="test-1-3" class="test-label">Username validation enforces 3+ characters</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-4">
+                <label for="test-1-4" class="test-label">Password strength indicator shows correctly</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-5">
+                <label for="test-1-5" class="test-label">Password confirmation validation works</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-1-6">
+                <label for="test-1-6" class="test-label">Submit button disabled until all valid</label>
+            </div>
+        </div>
+
+        <!-- Login Form Tests -->
+        <div class="test-section">
+            <h2>2. Login Form Functionality</h2>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-2-1">
+                <label for="test-2-1" class="test-label">Password visibility toggle works</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-2-2">
+                <label for="test-2-2" class="test-label">Remember me checkbox saves email</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-2-3">
+                <label for="test-2-3" class="test-label">Loading spinner appears on submit</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-2-4">
+                <label for="test-2-4" class="test-label">Error messages display correctly</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-2-5">
+                <label for="test-2-5" class="test-label">Form clears or redirects on success</label>
+            </div>
+        </div>
+
+        <!-- Token Management Tests -->
+        <div class="test-section">
+            <h2>3. Token Management</h2>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-3-1">
+                <label for="test-3-1" class="test-label">Tokens stored in localStorage after login</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-3-2">
+                <label for="test-3-2" class="test-label">Access token is valid JWT format</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-3-3">
+                <label for="test-3-3" class="test-label">Refresh token is valid JWT format</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-3-4">
+                <label for="test-3-4" class="test-label">Tokens persist across page reloads</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-3-5">
+                <label for="test-3-5" class="test-label">Tokens cleared when localStorage cleared</label>
+            </div>
+        </div>
+
+        <!-- API Integration Tests -->
+        <div class="test-section">
+            <h2>4. Backend API Integration</h2>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-4-1">
+                <label for="test-4-1" class="test-label">Signup creates account successfully</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-4-2">
+                <label for="test-4-2" class="test-label">Login with correct credentials succeeds</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-4-3">
+                <label for="test-4-3" class="test-label">Login with wrong password fails gracefully</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-4-4">
+                <label for="test-4-4" class="test-label">Duplicate email signup rejected</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-4-5">
+                <label for="test-4-5" class="test-label">Token refresh endpoint works</label>
+            </div>
+        </div>
+
+        <!-- UI/UX Tests -->
+        <div class="test-section">
+            <h2>5. User Interface & Experience</h2>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-5-1">
+                <label for="test-5-1" class="test-label">Pages are responsive on mobile (375px)</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-5-2">
+                <label for="test-5-2" class="test-label">Pages are responsive on tablet (768px)</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-5-3">
+                <label for="test-5-3" class="test-label">Pages are responsive on desktop (1920px)</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-5-4">
+                <label for="test-5-4" class="test-label">Logo displays with gradient styling</label>
+            </div>
+            <div class="test-item">
+                <input type="checkbox" class="test-checkbox" id="test-5-5">
+                <label for="test-5-5" class="test-label">Form styling matches design (Instagram-like)</label>
+            </div>
+        </div>
+
+        <!-- Auto Test Results -->
+        <div class="test-section">
+            <h2>6. Automated API Tests</h2>
+            <button onclick="runAutoTests()">Run Auto Tests</button>
+            <div id="apiTestResults" class="api-test-results" style="display: none;">
+                <pre id="apiTestOutput"></pre>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="results" style="margin-top: 30px;">
+            <h2 style="margin-bottom: 15px;">Test Summary</h2>
+            <div class="summary">
+                <div class="summary-item">
+                    <div class="summary-number" id="totalTests">0</div>
+                    <div class="summary-label">Total Tests</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="passedTests" style="color: #4caf50;">0</div>
+                    <div class="summary-label">Passed</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" id="failedTests" style="color: #f44336;">0</div>
+                    <div class="summary-label">Failed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update test counter
+        function updateProgress() {
+            const checkboxes = document.querySelectorAll('.test-checkbox');
+            const checked = document.querySelectorAll('.test-checkbox:checked');
+            const total = checkboxes.length;
+            const passed = checked.length;
+            const percentage = (passed / total) * 100;
+
+            document.getElementById('progressFill').style.width = percentage + '%';
+            document.getElementById('totalTests').textContent = total;
+            document.getElementById('passedTests').textContent = passed;
+            document.getElementById('failedTests').textContent = total - passed;
+            document.getElementById('statusText').textContent = 
+                `Progress: ${passed}/${total} tests passed (${Math.round(percentage)}%)`;
+        }
+
+        // Add change listeners
+        document.querySelectorAll('.test-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', updateProgress);
+        });
+
+        // Reset all tests
+        function resetTests() {
+            document.querySelectorAll('.test-checkbox').forEach(cb => cb.checked = false);
+            updateProgress();
+        }
+
+        // Export results
+        function exportResults() {
+            const checks = document.querySelectorAll('.test-checkbox');
+            const results = Array.from(checks).map(cb => {
+                const label = cb.nextElementSibling.textContent;
+                return `${cb.checked ? '[PASS]' : '[FAIL]'} ${label}`;
+            }).join('\n');
+
+            const timestamp = new Date().toLocaleString();
+            const text = `TODDLY FRONTEND TEST RESULTS\nGenerated: ${timestamp}\n\n${results}`;
+            
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `toddly-test-results-${Date.now()}.txt`;
+            a.click();
+        }
+
+        // Run automated tests
+        async function runAutoTests() {
+            const output = document.getElementById('apiTestOutput');
+            const resultsDiv = document.getElementById('apiTestResults');
+            resultsDiv.style.display = 'block';
+            output.innerHTML = 'Running automated tests...\n';
+
+            const apiUrl = 'http://localhost:8001/api';
+            let testsPassed = 0;
+            let testsFailed = 0;
+
+            try {
+                // Test 1: Health check
+                output.innerHTML += '\n[TEST 1] Health Check\n';
+                const healthRes = await fetch('http://localhost:8001/health');
+                if (healthRes.ok) {
+                    output.innerHTML += 'PASS: Backend is running\n';
+                    testsPassed++;
+                } else {
+                    output.innerHTML += 'FAIL: Backend health check failed\n';
+                    testsFailed++;
+                }
+
+                // Test 2: Signup validation
+                output.innerHTML += '\n[TEST 2] Signup - Invalid Email\n';
+                const badEmailRes = await fetch(`${apiUrl}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: 'invalid-email',
+                        username: 'testuser',
+                        password: 'TestPassword123'
+                    })
+                });
+                if (badEmailRes.status === 422) {
+                    output.innerHTML += 'PASS: Invalid email rejected (422)\n';
+                    testsPassed++;
+                } else {
+                    output.innerHTML += `FAIL: Expected 422, got ${badEmailRes.status}\n`;
+                    testsFailed++;
+                }
+
+                // Test 3: Valid signup
+                output.innerHTML += '\n[TEST 3] Signup - Valid Account\n';
+                const email = `test${Date.now()}@example.com`;
+                const signupRes = await fetch(`${apiUrl}/auth/signup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: email,
+                        username: `user${Date.now()}`,
+                        password: 'TestPassword123',
+                        first_name: 'Test',
+                        last_name: 'User'
+                    })
+                });
+                
+                if (signupRes.ok) {
+                    const data = await signupRes.json();
+                    if (data.access_token && data.refresh_token) {
+                        output.innerHTML += 'PASS: Signup successful, tokens returned\n';
+                        testsPassed++;
+
+                        // Test 4: Token format
+                        output.innerHTML += '\n[TEST 4] Token Format\n';
+                        if (data.access_token.startsWith('eyJ') && data.refresh_token.startsWith('eyJ')) {
+                            output.innerHTML += 'PASS: Tokens are valid JWT format\n';
+                            testsPassed++;
+                        } else {
+                            output.innerHTML += 'FAIL: Tokens not in JWT format\n';
+                            testsFailed++;
+                        }
+
+                        // Test 5: Login with new account
+                        output.innerHTML += '\n[TEST 5] Login - Valid Credentials\n';
+                        const loginRes = await fetch(`${apiUrl}/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: email,
+                                password: 'TestPassword123'
+                            })
+                        });
+
+                        if (loginRes.ok) {
+                            output.innerHTML += 'PASS: Login successful\n';
+                            testsPassed++;
+                        } else {
+                            output.innerHTML += 'FAIL: Login failed\n';
+                            testsFailed++;
+                        }
+
+                        // Test 6: Invalid password
+                        output.innerHTML += '\n[TEST 6] Login - Invalid Password\n';
+                        const badLoginRes = await fetch(`${apiUrl}/auth/login`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: email,
+                                password: 'WrongPassword123'
+                            })
+                        });
+
+                        if (badLoginRes.status === 401) {
+                            output.innerHTML += 'PASS: Invalid password rejected (401)\n';
+                            testsPassed++;
+                        } else {
+                            output.innerHTML += `FAIL: Expected 401, got ${badLoginRes.status}\n`;
+                            testsFailed++;
+                        }
+
+                        // Test 7: Token refresh
+                        output.innerHTML += '\n[TEST 7] Refresh Token\n';
+                        const refreshRes = await fetch(`${apiUrl}/auth/refresh`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                refresh_token: data.refresh_token
+                            })
+                        });
+
+                        if (refreshRes.ok) {
+                            const refreshData = await refreshRes.json();
+                            if (refreshData.access_token) {
+                                output.innerHTML += 'PASS: Token refresh successful\n';
+                                testsPassed++;
+                            } else {
+                                output.innerHTML += 'FAIL: No access token in refresh response\n';
+                                testsFailed++;
+                            }
+                        } else {
+                            output.innerHTML += 'FAIL: Token refresh failed\n';
+                            testsFailed++;
+                        }
+                    } else {
+                        output.innerHTML += 'FAIL: Tokens not in response\n';
+                        testsFailed++;
+                    }
+                } else {
+                    const error = await signupRes.json();
+                    output.innerHTML += `FAIL: Signup failed - ${error.detail}\n`;
+                    testsFailed++;
+                }
+            } catch (error) {
+                output.innerHTML += `\nERROR: ${error.message}\n`;
+                output.innerHTML += 'Make sure backend is running on http://localhost:8001\n';
+                resultsDiv.classList.add('error');
+            }
+
+            output.innerHTML += `\n${'='.repeat(40)}\n`;
+            output.innerHTML += `RESULTS: ${testsPassed} passed, ${testsFailed} failed\n`;
+            output.innerHTML += `${'='.repeat(40)}`;
+
+            if (testsFailed > 0) {
+                resultsDiv.classList.add('error');
+            }
+        }
+
+        // Initialize
+        updateProgress();
+    </script>
+</body>
+</html>

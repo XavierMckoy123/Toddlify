@@ -5,6 +5,7 @@ from config import DATABASE_URL
 # Create database engine
 engine = create_engine(
     DATABASE_URL,
+    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
     echo=True,  # Log all SQL statements (set to False in production)
     pool_pre_ping=True,  # Verify connections before using them
 )

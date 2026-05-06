@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Database
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/toddly")
+# Database - Using SQLite for local development
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./toddly.db")
 
 # JWT
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")

@@ -1,9 +1,9 @@
 /* ============================================
-   HOME PAGE JAVASCRIPT
+HOME PAGE JAVASCRIPT
    ============================================ */
 
 // API Base URL - Update this to your backend URL
-const API_BASE_URL = 'http://192.168.100.77:8001/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 // DOM Elements - Navigation
 const postBtn = document.getElementById('postBtn');

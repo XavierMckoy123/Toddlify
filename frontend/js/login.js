@@ -35,7 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<span class="spinner"></span>Logging in...';
 
         try {
+            // alert("Login successful!");
             const response = await api.login(emailInput.value, passwordInput.value);
+            alert("Login successful!");
 
             // Store tokens
             api.setTokens(response.access_token, response.refresh_token);
@@ -48,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Redirect to home/feed
-            window.location.href = 'feed.html';
+            window.location.href = 'home.html';
         } catch (error) {
             showError(error.message);
             submitBtn.disabled = false;

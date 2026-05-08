@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toddlify - Social Media</title>
+    <link rel="stylesheet" href="styles/home.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <h1>Toddlify</h1>
+            </div>
+            <div class="navbar-buttons">
+                <button class="nav-btn post-btn" id="postBtn" title="Create Post">
+                    ➕
+                </button>
+                <button class="nav-btn search-btn" id="searchBtn" title="Search">
+                    🔍
+                </button>
+                <button class="nav-btn profile-btn" id="profileBtn" title="Profile">
+                    👤
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Search Results Section (Hidden by default) -->
+        <section id="searchSection" class="search-section hidden">
+            <div class="search-header">
+                <button class="back-btn" id="backBtn">← Back</button>
+                <h2>Search Results</h2>
+            </div>
+            <div class="search-results" id="searchResults"></div>
+        </section>
+
+        <!-- Posts Feed Section -->
+        <section id="feedSection" class="feed-section">
+            <div class="feed-header">
+                <h2>Your Feed</h2>
+            </div>
+            <div class="posts-container" id="postsContainer">
+                <div class="loading">Loading posts...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Post Modal -->
+    <div id="postModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create a Post</h2>
+                <button class="close-btn" id="closePostModal">&times;</button>
+            </div>
+            <form id="postForm">
+                <textarea 
+                    id="postContent" 
+                    placeholder="What's on your mind?" 
+                    required
+                    maxlength="500"
+                ></textarea>
+                <div class="modal-footer">
+                    <span id="charCount">0/500</span>
+                    <button type="submit" class="submit-btn">Post</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div id="searchModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Search Users</h2>
+                <button class="close-btn" id="closeSearchModal">&times;</button>
+            </div>
+            <form id="searchForm">
+                <input 
+                    type="text" 
+                    id="searchQuery" 
+                    placeholder="Search for users..." 
+                    required
+                >
+                <button type="submit" class="submit-btn">Search</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/api.js"></script>
+    <script src="js/home.js"></script>
+</body>
+</html>

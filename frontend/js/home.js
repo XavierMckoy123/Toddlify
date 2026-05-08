@@ -3,7 +3,7 @@
    ============================================ */
 
 // API Base URL - Update this to your backend URL
-const API_BASE_URL = 'http://192.168.100.77:8001/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 // DOM Elements - Navigation
 const postBtn = document.getElementById('postBtn');
@@ -213,14 +213,17 @@ async function handlePostSubmit(e) {
     try {
         // Create FormData for multipart request (to handle file uploads)
         const formData = new FormData();
-        formData.append('content', content);
+        formData.append('caption', content);
         
         if (selectedMediaFile) {
-            formData.append('media', selectedMediaFile);
+            formData.append('file', selectedMediaFile);
+        } else {
+            alert('Please select a file to upload!');
+            return;
         }
 
         // Call API to create post
-        const response = await fetch(`${API_BASE_URL}/posts/create`, {
+        const response = await fetch(`${API_BASE_URL}/posts/upload`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${api.getAccessToken()}`
@@ -295,7 +298,7 @@ async function loadFeed() {
         postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
         
         // Fetch posts from API
-        const response = await fetch(`${API_BASE_URL}/posts/feed`, {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
             headers: {
                 'Authorization': `Bearer ${api.getAccessToken()}`
             }

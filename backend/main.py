@@ -5,6 +5,9 @@ from sqlalchemy.exc import IntegrityError
 from config import FRONTEND_URL
 from database import get_db, init_db
 from uuid import UUID
+import os
+from fastapi.staticfiles import StaticFiles
+from uuid import uuid4
 from models import User, Post
 from schemas import (
     UserSignup, UserLogin, Token, TokenRefresh,
@@ -20,6 +23,11 @@ app = FastAPI(
     description="Instagram-inspired app for sharing toddler moments",
     version="1.0.0"
 )
+
+# ✅ CREATE FOLDER FIRST
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # CORS
 app.add_middleware(
@@ -43,7 +51,7 @@ async def health_check():
 # AUTH
 # ============================================
 
-@app.post("/api/auth/signup", response_model=Token, status_code=201)
+@app.post("/api/auth/signup", response_model=UserResponse, status_code=201)
 async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
     try:
         existing_user = db.query(User).filter(
@@ -71,14 +79,7 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
 
-        access_token = create_access_token({"sub": str(new_user.id)})
-        refresh_token = create_refresh_token({"sub": str(new_user.id)})
-
-        return {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": "bearer"
-        }
+        return new_user
 
     except IntegrityError:
         db.rollback()
@@ -88,27 +89,9 @@ async def signup(user_data: UserSignup, db: Session = Depends(get_db)):
         )
 
 
-@app.post("/api/auth/login", response_model=Token)
-async def login(credentials: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == credentials.email).first()
-
-    if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
-
-    access_token = create_access_token({"sub": str(user.id)})
-    refresh_token = create_refresh_token({"sub": str(user.id)})
-
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
 
 
-@app.post("/api/auth/refresh", response_model=Token)
+@app.post("/api/auth/refresh", response_model=UserResponse)
 async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(get_db)):
     payload = verify_token(token_data.refresh_token)
 
@@ -131,6 +114,21 @@ async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(g
         "access_token": new_access_token,
         "refresh_token": token_data.refresh_token,
         "token_type": "bearer"
+    }
+
+@app.post("/api/auth/login")
+async def login(data: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(
+        User.email == data.email
+    ).first()
+
+    if not user or not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    return {
+        "message": "Login successful",
+        "user_id": str(user.id),
+        "username": user.username
     }
 
 
@@ -219,30 +217,44 @@ async def create_post(
     if (not content or not content.strip()) and not media:
         raise HTTPException(status_code=400, detail="Post must have content or media")
 
+     # Create uploads folder
+    UPLOAD_DIR = "uploads"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+
     media_url = None
     media_type = None
 
-    try:
-        new_post = Post(
-            content=content.strip() if content else None,
-            media_url=media_url,
-            media_type=media_type,
-            author_id=user_id
-        )
+    # Save file if provided
+    if media:
+        file_ext = media.filename.split('.')[-1]
+        file_name = f"{uuid4()}.{file_ext}"
+        file_path = os.path.join(UPLOAD_DIR, file_name)
 
-        db.add(new_post)
-        db.commit()
-        db.refresh(new_post)
+        with open(file_path, "wb") as buffer:
+            buffer.write(await media.read())
 
-        return {
-            "id": str(new_post.id),
-            "message": "Post created successfully",
-            "created_at": new_post.created_at
-        }
+        media_url = f"/uploads/{file_name}"
 
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        if media.content_type.startswith("image"):
+            media_type = "image"
+        elif media.content_type.startswith("video"):
+            media_type = "video"
+
+    # TEMP user (since you removed auth)
+    fake_user_id = db.query(User).first().id
+
+    new_post = Post(
+        content=content,
+        media_url=media_url,
+        media_type=media_type,
+        author_id=fake_user_id
+    )
+
+    db.add(new_post)
+    db.commit()
+    db.refresh(new_post)
+
+    return {"message": "Post created successfully"}
 
 
 @app.get("/api/posts/feed")

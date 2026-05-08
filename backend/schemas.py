@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
+
 
 
 # User Signup/Registration Schema
@@ -28,7 +30,7 @@ class TokenRefresh(BaseModel):
 
 # User Response Schema (returned after successful operations)
 class UserResponse(BaseModel):
-    id: str
+    id: UUID
     email: str
     username: str
     first_name: Optional[str] = None

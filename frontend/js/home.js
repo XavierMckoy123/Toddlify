@@ -4,6 +4,8 @@
 
 // API Base URL - Update this to your backend URL
 const API_BASE_URL = 'http://192.168.100.77:8001/api';
+//Backedn URL, more or less the same thing
+const BACKEND_URL = 'http://192.168.100.77:8001';
 
 // DOM Elements - Navigation
 const postBtn = document.getElementById('postBtn');
@@ -418,9 +420,9 @@ function createProfilePostItem(post) {
     if (post.media_url) {
         let mediaHtml;
         if (post.media_type === 'image') {
-            mediaHtml = `<img src="${post.media_url}" alt="Post" class="profile-post-image">`;
+           mediaHtml = `<div class="post-media"><img src="${BACKEND_URL}${post.media_url}" alt="Post media"></div>`;
         } else if (post.media_type === 'video') {
-            mediaHtml = `<video src="${post.media_url}" class="profile-post-image"></video>`;
+            mediaHtml = `<div class="post-media"><video src="${BACKEND_URL}${post.media_url}" controls></video></div>`;
         } else {
             mediaHtml = `<div class="profile-post-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center;">📄</div>`;
         }
@@ -446,9 +448,9 @@ function createPostCard(post) {
     let mediaHtml = '';
     if (post.media_url) {
         if (post.media_type === 'image') {
-            mediaHtml = `<div class="post-media"><img src="${post.media_url}" alt="Post media"></div>`;
+           mediaHtml = `<img src="${BACKEND_URL}${post.media_url}" alt="Post" class="profile-post-image">`;
         } else if (post.media_type === 'video') {
-            mediaHtml = `<div class="post-media"><video src="${post.media_url}" controls></video></div>`;
+          mediaHtml = `<video src="${BACKEND_URL}${post.media_url}" class="profile-post-image"></video>`;
         }
     }
     

@@ -143,6 +143,8 @@ body {
 
 /* Post Card */
 .post-card {
+    display: flex;
+    flex-direction: column;
     background-color: var(--bg-white);
     border-radius: 0.75rem;
     padding: 1.5rem;
@@ -157,18 +159,18 @@ body {
 }
 
 .post-media {
-    margin: 1rem -1.5rem;
-    max-height: 400px;
+    width: 100%;
+    max-height: 400px;   /* ✅ controls how tall it can get */
     overflow: hidden;
-    border-radius: 0.5rem;
+    margin-top: 10px;
+    border-radius: 10px;
 }
 
 .post-media img,
 .post-media video {
     width: 100%;
-    height: auto;
-    object-fit: cover;
-    display: block;
+    height: 100%;
+    object-fit: cover;   /* ✅ fills nicely without stretching */
 }
 
 .post-header {
@@ -216,6 +218,8 @@ body {
     margin-bottom: 1rem;
     line-height: 1.6;
     font-size: 1rem;
+    
+    position: static; /* ✅ or just REMOVE position entirely */
 }
 
 .post-footer {

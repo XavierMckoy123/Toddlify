@@ -39,12 +39,36 @@
         </section>
 
         <!-- Posts Feed Section -->
-        <section id="feedSection" class="feed-section">
+        <section id="feedSection" class="feed-section active">
             <div class="feed-header">
                 <h2>Your Feed</h2>
             </div>
             <div class="posts-container" id="postsContainer">
                 <div class="loading">Loading posts...</div>
+            </div>
+        </section>
+
+        <!-- Profile Section (Hidden by default) -->
+        <section id="profileSection" class="profile-section hidden">
+            <div class="profile-header">
+                <button class="back-btn" id="profileBackBtn">← Back</button>
+                <h2>Profile</h2>
+            </div>
+            <div class="profile-container">
+                <div class="profile-card">
+                    <div class="profile-picture-wrapper">
+                        <div class="profile-picture" id="profilePicture">👤</div>
+                    </div>
+                    <h2 class="profile-name" id="profileName">User Name</h2>
+                    <p class="profile-username" id="profileUsername">@username</p>
+                    <p class="profile-bio" id="profileBio">User bio goes here</p>
+                </div>
+                <div class="profile-posts-header">
+                    <h3>Posts</h3>
+                </div>
+                <div class="profile-posts-grid" id="profilePostsGrid">
+                    <div class="loading">Loading posts...</div>
+                </div>
             </div>
         </section>
     </main>
@@ -57,12 +81,34 @@
                 <button class="close-btn" id="closePostModal">&times;</button>
             </div>
             <form id="postForm">
+                <!-- Media Upload Section -->
+                <div class="media-upload-section">
+                    <div class="media-preview" id="mediaPreview"></div>
+                    <div class="upload-controls">
+                        <label class="file-input-label">
+                            <input 
+                                type="file" 
+                                id="mediaInput" 
+                                accept="image/*,video/*"
+                                class="file-input-hidden"
+                            >
+                            📷 Upload Image/Video
+                        </label>
+                        <button type="button" class="remove-media-btn" id="removeMediaBtn" style="display: none;">
+                            ✕ Remove
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Caption Section -->
                 <textarea 
                     id="postContent" 
                     placeholder="What's on your mind?" 
                     required
                     maxlength="500"
                 ></textarea>
+
+                <!-- Footer -->
                 <div class="modal-footer">
                     <span id="charCount">0/500</span>
                     <button type="submit" class="submit-btn">Post</button>

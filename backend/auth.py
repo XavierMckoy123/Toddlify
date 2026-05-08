@@ -2,10 +2,15 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
 from config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES, REFRESH_TOKEN_EXPIRE_DAYS
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Security scheme
+security = HTTPBearer()
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt"""
@@ -44,9 +49,27 @@ def verify_token(token: str) -> Optional[Dict[str, Any]]:
     except JWTError:
         return None
 
-def get_user_id_from_token(token: str) -> Optional[str]:
-    """Extract user_id from token"""
+def get_user_id_from_token(credentials=Depends(security)) -> str:
+    """
+    Extract and verify user_id from Authorization header token.
+    Used as a FastAPI dependency for protected endpoints.
+    """
+    token = credentials.credentials
     payload = verify_token(token)
-    if payload:
-        return payload.get("sub")
-    return None
+    
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    return user_id

@@ -1,6 +1,6 @@
 // API Helper - Centralized API communication
 
-const API_URL = 'http://192.168.100.77:8001/api';
+const API_URL = 'http://localhost:8001/api';
 
 class APIClient {
     constructor(baseUrl = API_URL) {
@@ -46,7 +46,7 @@ class APIClient {
             throw new Error('Session expired. Please log in again.');
         }
 
-       let data;
+        let data;
             try {
                 data = await response.json();
             } catch {

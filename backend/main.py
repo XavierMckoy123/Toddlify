@@ -1,12 +1,17 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from typing import Optional, List
 from config import FRONTEND_URL
 from database import get_db, init_db
-from models import User
-from schemas import UserSignup, UserLogin, Token, TokenRefresh, UserResponse
+from models import User, Post
+from schemas import (
+    UserSignup, UserLogin, Token, TokenRefresh, UserResponse,
+    PostCreate, PostResponse, PostListResponse, FileUploadResponse
+)
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, verify_token, get_user_id_from_token
+from blob_storage import get_blob_manager
 
 # Initialize database
 init_db()
@@ -149,6 +154,176 @@ async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(g
         "refresh_token": token_data.refresh_token,  # Keep same refresh token
         "token_type": "bearer"
     }
+
+
+# ==================== FILE UPLOAD ENDPOINTS ====================
+
+@app.post("/api/posts/upload", response_model=FileUploadResponse, status_code=201)
+async def upload_post(
+    file: UploadFile = File(...),
+    caption: Optional[str] = None,
+    current_user_id: str = Depends(get_user_id_from_token),
+    db: Session = Depends(get_db)
+):
+    """Upload a file and create a post"""
+    try:
+        blob_manager = get_blob_manager()
+        file_content = await file.read()
+        
+        # Upload to blob storage
+        upload_result = blob_manager.upload_file(
+            file_content=file_content,
+            filename=file.filename,
+            user_id=current_user_id,
+            content_type=file.content_type
+        )
+        
+        # Create post record in database
+        new_post = Post(
+            user_id=current_user_id,
+            blob_name=upload_result["blob_name"],
+            blob_url=upload_result["blob_url"],
+            content_type=upload_result["content_type"],
+            file_size=upload_result["file_size"],
+            caption=caption
+        )
+        db.add(new_post)
+        db.commit()
+        db.refresh(new_post)
+        
+        return FileUploadResponse(
+            post_id=str(new_post.id),
+            blob_url=new_post.blob_url,
+            content_type=new_post.content_type,
+            file_size=new_post.file_size
+        )
+    
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"File upload failed: {str(e)}"
+        )
+
+
+@app.get("/api/posts", response_model=List[PostListResponse])
+async def get_all_posts(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 20
+):
+    """Get all posts from all users (paginated)"""
+    posts = db.query(Post).order_by(Post.created_at.desc()).offset(skip).limit(limit).all()
+    return posts
+
+
+@app.get("/api/posts/{post_id}", response_model=PostResponse)
+async def get_post(
+    post_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get a specific post by ID"""
+    post = db.query(Post).filter(Post.id == post_id).first()
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    
+    return post
+
+
+@app.get("/api/users/{user_id}/posts", response_model=List[PostListResponse])
+async def get_user_posts(
+    user_id: str,
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 20
+):
+    """Get all posts from a specific user (paginated)"""
+    # Check if user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    posts = db.query(Post).filter(Post.user_id == user_id).order_by(Post.created_at.desc()).offset(skip).limit(limit).all()
+    return posts
+
+
+@app.delete("/api/posts/{post_id}", status_code=204)
+async def delete_post(
+    post_id: str,
+    current_user_id: str = Depends(get_user_id_from_token),
+    db: Session = Depends(get_db)
+):
+    """Delete a post (only owner can delete)"""
+    post = db.query(Post).filter(Post.id == post_id).first()
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    
+    # Check if user is owner
+    if str(post.user_id) != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only delete your own posts"
+        )
+    
+    # Delete from blob storage
+    try:
+        blob_manager = get_blob_manager()
+        blob_manager.delete_file(post.blob_name)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete file: {str(e)}"
+        )
+    
+    # Delete from database
+    db.delete(post)
+    db.commit()
+
+
+@app.patch("/api/posts/{post_id}", response_model=PostResponse)
+async def update_post_caption(
+    post_id: str,
+    post_data: PostCreate,
+    current_user_id: str = Depends(get_user_id_from_token),
+    db: Session = Depends(get_db)
+):
+    """Update post caption (only owner can update)"""
+    post = db.query(Post).filter(Post.id == post_id).first()
+    
+    if not post:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Post not found"
+        )
+    
+    # Check if user is owner
+    if str(post.user_id) != current_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update your own posts"
+        )
+    
+    post.caption = post_data.caption
+    db.commit()
+    db.refresh(post)
+    
+    return post
 
 if __name__ == "__main__":
     import uvicorn

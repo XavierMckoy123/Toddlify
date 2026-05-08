@@ -199,31 +199,29 @@ async function handlePostSubmit(e) {
     e.preventDefault();
     
     const content = postContent.value.trim();
-    
-    if (!content) {
-        alert('Please write something before posting!');
+
+    if (!content && !selectedMediaFile) {
+        alert('Add text or media before posting!');
         return;
     }
 
-    // Show loading state
     const submitBtn = postForm.querySelector('.submit-btn');
     submitBtn.textContent = 'Posting...';
     submitBtn.disabled = true;
 
     try {
-        // Create FormData for multipart request (to handle file uploads)
         const formData = new FormData();
         formData.append('content', content);
-        
+
         if (selectedMediaFile) {
             formData.append('media', selectedMediaFile);
         }
 
-        // Call API to create post
         const response = await fetch(`${API_BASE_URL}/posts/create`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${api.getAccessToken()}`
+                // ❌ DO NOT set Content-Type manually
             },
             body: formData
         });
@@ -238,7 +236,7 @@ async function handlePostSubmit(e) {
         }
     } catch (error) {
         console.error('Error creating post:', error);
-        alert(error.message || 'Failed to create post. Please try again.');
+        alert(error.message || 'Failed to create post.');
     } finally {
         submitBtn.textContent = 'Post';
         submitBtn.disabled = false;

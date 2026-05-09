@@ -7,9 +7,46 @@ from database import get_db, init_db
 from models import User
 from schemas import UserSignup, UserLogin, Token, TokenRefresh, UserResponse
 from auth import hash_password, verify_password, create_access_token, create_refresh_token, verify_token, get_user_id_from_token
+from fastapi import File, UploadFile
+from typing import Optional
+import os
+from dotenv import load_dotenv
+import uuid
+from azure.storage.blob import (
+    BlobServiceClient,
+    generate_blob_sas,
+    BlobSasPermissions
+)
+from datetime import datetime, timedelta
 
 # Initialize database
 init_db()
+
+
+load_dotenv()
+AZURE_STORAGE_CONNECTION_STRING = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
+
+blob_service_client = BlobServiceClient.from_connection_string(
+    AZURE_STORAGE_CONNECTION_STRING
+)
+
+container_name = "uploads"
+account_name = blob_service_client.account_name
+
+account_key = blob_service_client.credential.account_key
+print(AZURE_STORAGE_CONNECTION_STRING)
+def generate_sas_url(blob_name: str):
+
+    sas_token = generate_blob_sas(
+        account_name=account_name,
+        container_name=container_name,
+        blob_name=blob_name,
+        account_key=account_key,
+        permission=BlobSasPermissions(read=True),
+        expiry=datetime.utcnow() + timedelta(hours=24)
+    )
+
+    return f"https://{account_name}.blob.core.windows.net/{container_name}/{blob_name}?{sas_token}"
 
 # Create FastAPI app
 app = FastAPI(
@@ -149,6 +186,53 @@ async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(g
         "refresh_token": token_data.refresh_token,  # Keep same refresh token
         "token_type": "bearer"
     }
+
+@app.post("/api/posts/create")
+async def create_post(
+    content: str,
+    media: Optional[UploadFile] = File(None)
+):
+    """Create a new post"""
+
+    media_url = None
+
+    # Upload media to Azure Blob Storage
+    if media:
+
+        file_extension = media.filename.split(".")[-1]
+
+        blob_name = f"{uuid.uuid4()}.{file_extension}"
+
+        blob_client = blob_service_client.get_blob_client(
+            container=container_name,
+            blob=blob_name
+        )
+
+        file_data = await media.read()
+
+        blob_client.upload_blob(
+            file_data,
+            overwrite=True,
+            content_type=media.content_type
+        )
+
+        media_url = generate_sas_url(blob_name)
+
+        media_type = None
+
+        if media.content_type.startswith("image/"):
+            media_type = "image"
+
+        elif media.content_type.startswith("video/"):
+            media_type = "video"
+            
+
+    return {
+    "message": "Post created successfully",
+    "content": content,
+    "media_url": media_url,
+    "media_type": media_type
+}
 
 if __name__ == "__main__":
     import uvicorn

@@ -420,18 +420,21 @@ function createProfilePostItem(post) {
     const item = document.createElement('div');
     item.className = 'profile-post-item';
     
-    if (post.media_url) {
+    // Use blob_url from backend (not media_url)
+    if (post.blob_url) {
         let mediaHtml;
-        if (post.media_type === 'image') {
-            mediaHtml = `<img src="${post.media_url}" alt="Post" class="profile-post-image">`;
-        } else if (post.media_type === 'video') {
-            mediaHtml = `<video src="${post.media_url}" class="profile-post-image"></video>`;
+        // Check content_type from backend (not media_type)
+        if (post.content_type && post.content_type.startsWith('image')) {
+            mediaHtml = `<img src="${post.blob_url}" alt="Post" class="profile-post-image">`;
+        } else if (post.content_type && post.content_type.startsWith('video')) {
+            mediaHtml = `<video src="${post.blob_url}" class="profile-post-image"></video>`;
         } else {
             mediaHtml = `<div class="profile-post-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center;">📄</div>`;
         }
         item.innerHTML = mediaHtml;
     } else {
-        item.innerHTML = `<div class="profile-post-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; padding: 1rem;">${escapeHtml(post.content.substring(0, 100))}</div>`;
+        // Use caption from backend (not content)
+        item.innerHTML = `<div class="profile-post-image" style="background-color: #f3f4f6; display: flex; align-items: center; justify-content: center; padding: 1rem;">${escapeHtml((post.caption || '').substring(0, 100))}</div>`;
     }
     
     return item;
@@ -441,19 +444,20 @@ function createPostCard(post) {
     const card = document.createElement('div');
     card.className = 'post-card';
     
-    // Get first letter of author name for avatar
-    const avatarLetter = post.author_name ? post.author_name.charAt(0).toUpperCase() : 'U';
+    // Get first letter of user id for avatar (since we don't have user name from API)
+    const avatarLetter = post.user_id ? post.user_id.charAt(0).toUpperCase() : 'U';
     
     // Format timestamp
     const timestamp = formatTime(post.created_at);
     
-    // Build media HTML if exists
+    // Build media HTML if exists (use blob_url from backend, not media_url)
     let mediaHtml = '';
-    if (post.media_url) {
-        if (post.media_type === 'image') {
-            mediaHtml = `<div class="post-media"><img src="${post.media_url}" alt="Post media"></div>`;
-        } else if (post.media_type === 'video') {
-            mediaHtml = `<div class="post-media"><video src="${post.media_url}" controls></video></div>`;
+    if (post.blob_url) {
+        // Check content_type from backend (not media_type)
+        if (post.content_type && post.content_type.startsWith('image')) {
+            mediaHtml = `<div class="post-media"><img src="${post.blob_url}" alt="Post media" style="max-width: 100%; height: auto;"></div>`;
+        } else if (post.content_type && post.content_type.startsWith('video')) {
+            mediaHtml = `<div class="post-media"><video src="${post.blob_url}" controls style="max-width: 100%; height: auto;"></video></div>`;
         }
     }
     
@@ -461,24 +465,24 @@ function createPostCard(post) {
         <div class="post-header">
             <div class="post-avatar">${avatarLetter}</div>
             <div class="post-meta">
-                <div class="post-author" style="cursor: pointer;" onclick="loadUserProfile('${post.author_id}')">
-                    ${post.author_name || 'Unknown User'}
+                <div class="post-author" style="cursor: pointer;">
+                    Unknown User
                 </div>
-                <div class="post-username">@${post.author_username || 'user'}</div>
+                <div class="post-username">@user</div>
                 <div class="post-timestamp">${timestamp}</div>
             </div>
         </div>
         ${mediaHtml}
-        <div class="post-content">${escapeHtml(post.content)}</div>
+        <div class="post-content">${escapeHtml(post.caption || '')}</div>
         <div class="post-footer">
             <button class="post-action" title="Like">
-                ❤️ <span>${post.likes_count || 0}</span>
+                ❤️ <span>0</span>
             </button>
             <button class="post-action" title="Comment">
-                💬 <span>${post.comments_count || 0}</span>
+                💬 <span>0</span>
             </button>
             <button class="post-action" title="Share">
-                🔄 <span>${post.shares_count || 0}</span>
+                🔄 <span>0</span>
             </button>
         </div>
     `;

@@ -6,6 +6,7 @@ from config import FRONTEND_URL
 from database import get_db, init_db
 from uuid import UUID
 import os
+from typing import List
 from fastapi.staticfiles import StaticFiles
 from uuid import uuid4
 from models import User, Post
@@ -136,18 +137,7 @@ async def login(data: UserLogin, db: Session = Depends(get_db)):
 # USERS
 # ============================================
 
-@app.get("/api/users/{user_id}", response_model=UserResponse)
-async def get_user(user_id: str, db: Session = Depends(get_db)):
-    user_id = UUID(user_id)
-
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    return user
-
-
-@app.get("/api/users/search")
+@app.get("/api/users/search", response_model=List[UserResponse])
 async def search_users(q: str, db: Session = Depends(get_db)):
     if not q:
         return []
@@ -159,6 +149,19 @@ async def search_users(q: str, db: Session = Depends(get_db)):
     ).limit(20).all()
 
     return users
+
+@app.get("/api/users/{user_id}", response_model=UserResponse)
+async def get_user(user_id: str, db: Session = Depends(get_db)):
+    user_id = UUID(user_id)
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return user
+
+
+
 
 
 @app.get("/api/users/{user_id}/posts")
@@ -197,41 +200,32 @@ async def get_user_posts(user_id: str, db: Session = Depends(get_db)):
 # POSTS
 # ============================================
 
-@app.post("/api/posts/create", status_code=201)
+@app.post("/api/posts/create")
 async def create_post(
     content: str = Form(None),
+    user_id: str = Form(...),
     media: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
-        # TEMP: fake logged-in user
-    user = db.query(User).first()
-    if not user:
-        raise HTTPException(status_code=400, detail="No users exist")
+    user = db.query(User).filter(User.id == UUID(user_id)).first()
 
-    user_id = user.id
-
-    user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
 
     if (not content or not content.strip()) and not media:
         raise HTTPException(status_code=400, detail="Post must have content or media")
 
-     # Create uploads folder
-    UPLOAD_DIR = "uploads"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-
     media_url = None
     media_type = None
 
-    # Save file if provided
     if media:
         file_ext = media.filename.split('.')[-1]
         file_name = f"{uuid4()}.{file_ext}"
-        file_path = os.path.join(UPLOAD_DIR, file_name)
+        file_path = os.path.join("uploads", file_name)
 
+        contents = await media.read()   # ✅ read once
         with open(file_path, "wb") as buffer:
-            buffer.write(await media.read())
+            buffer.write(contents)
 
         media_url = f"/uploads/{file_name}"
 
@@ -240,22 +234,17 @@ async def create_post(
         elif media.content_type.startswith("video"):
             media_type = "video"
 
-    # TEMP user (since you removed auth)
-    fake_user_id = db.query(User).first().id
-
     new_post = Post(
-        content=content,
+        content=content or "",
         media_url=media_url,
         media_type=media_type,
-        author_id=fake_user_id
+        author_id=user.id
     )
 
     db.add(new_post)
     db.commit()
-    db.refresh(new_post)
 
-    return {"message": "Post created successfully"}
-
+    return {"success": True}   # ✅ cleaner response
 
 @app.get("/api/posts/feed")
 async def get_feed(

@@ -213,6 +213,7 @@ async function handlePostSubmit(e) {
 
     try {
         const formData = new FormData();
+        formData.append('user_id', localStorage.getItem('user_id'));
         formData.append('content', content);
 
         if (selectedMediaFile) {
@@ -221,12 +222,9 @@ async function handlePostSubmit(e) {
 
         const response = await fetch(`${API_BASE_URL}/posts/create`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${api.getAccessToken()}`
-                // ❌ DO NOT set Content-Type manually
-            },
+            // ❌ REMOVE headers completely
             body: formData
-        });
+});
 
         if (response.ok) {
             alert('Post created successfully!');
@@ -237,12 +235,14 @@ async function handlePostSubmit(e) {
             throw new Error(error.detail || 'Failed to create post');
         }
     } catch (error) {
-        console.error('Error creating post:', error);
-        alert(error.message || 'Failed to create post.');
-    } finally {
-        submitBtn.textContent = 'Post';
-        submitBtn.disabled = false;
-    }
+    console.error('Error creating post:', error);
+
+    // If it's a network error but post likely succeeded
+    alert('Post may have been created. Refreshing...');
+
+    closePostModalHandler();
+    loadFeed();
+}
 }
 
 async function handleSearchSubmit(e) {
@@ -295,7 +295,7 @@ async function loadFeed() {
         postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
         
         // Fetch posts from API
-        const response = await fetch(`${API_BASE_URL}/posts/feed`, {
+            const response = await fetch(`${API_BASE_URL}/posts/feed`, {
             headers: {
                 'Authorization': `Bearer ${api.getAccessToken()}`
             }

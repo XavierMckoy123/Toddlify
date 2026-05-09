@@ -35,22 +35,29 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<span class="spinner"></span>Logging in...';
 
         try {
-            // alert("Login successful!");
             const response = await api.login(emailInput.value, passwordInput.value);
-            alert("Login successful!");
 
-            // Store tokens
-            api.setTokens(response.access_token, response.refresh_token);
+                alert("Login successful!");
 
-            // Store email if remember me is checked
-            if (rememberMe.checked) {
-                localStorage.setItem('remembered_email', emailInput.value);
-            } else {
-                localStorage.removeItem('remembered_email');
-            }
+                // Store tokens
+               // Save user info instead (since no auth system now)
+                localStorage.setItem('user_id', response.user_id);
+                localStorage.setItem('username', response.username);
 
-            // Redirect to home/feed
-            window.location.href = 'home.html';
+                // ✅ ADD THIS
+                if (response.user && response.user.id) {
+                    localStorage.setItem('user_id', response.user.id);
+                }
+
+                // Remember email
+                if (rememberMe.checked) {
+                    localStorage.setItem('remembered_email', emailInput.value);
+                } else {
+                    localStorage.removeItem('remembered_email');
+                }
+
+                // Redirect
+                window.location.href = 'home.html';
         } catch (error) {
             showError(error.message);
             submitBtn.disabled = false;

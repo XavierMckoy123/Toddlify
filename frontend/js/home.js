@@ -197,48 +197,41 @@ function removeMedia() {
 
 async function handlePostSubmit(e) {
     e.preventDefault();
-    
+
     const content = postContent.value.trim();
-    
+
     if (!content) {
         alert('Please write something before posting!');
         return;
     }
 
-    // Show loading state
     const submitBtn = postForm.querySelector('.submit-btn');
     submitBtn.textContent = 'Posting...';
     submitBtn.disabled = true;
 
     try {
-        // Create FormData for multipart request (to handle file uploads)
         const formData = new FormData();
-        formData.append('content', content);
-        
+
         if (selectedMediaFile) {
-            formData.append('media', selectedMediaFile);
+            formData.append('file', selectedMediaFile);
         }
 
-        // Call API to create post
-        const response = await fetch(`${API_BASE_URL}/posts/create`, {
+        formData.append('caption', content);
+
+        // ✅ FIXED: store response
+        const response = await api.request('/posts/upload', {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${api.getAccessToken()}`
-            },
             body: formData
         });
 
-        if (response.ok) {
-            alert('Post created successfully!');
-            closePostModalHandler();
-            loadFeed();
-        } else {
-            const error = await response.json();
-            throw new Error(error.detail || 'Failed to create post');
-        }
+        // ✅ api.request already throws on error, so this is success
+        alert('Post created successfully!');
+        closePostModalHandler();
+        loadFeed();
+
     } catch (error) {
         console.error('Error creating post:', error);
-        alert(error.message || 'Failed to create post. Please try again.');
+        alert(error.message || 'Failed to create post.');
     } finally {
         submitBtn.textContent = 'Post';
         submitBtn.disabled = false;
@@ -295,9 +288,9 @@ async function loadFeed() {
         postsContainer.innerHTML = '<div class="loading">Loading posts...</div>';
         
         // Fetch posts from API
-        const response = await fetch(`${API_BASE_URL}/posts/feed`, {
+        const response = await fetch(`${API_BASE_URL}/posts`, {
             headers: {
-                'Authorization': `Bearer ${api.getAccessToken()}`
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
         });
         
@@ -344,7 +337,7 @@ async function loadUserProfile(userId) {
         // Fetch user data
         const userResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
             headers: {
-                'Authorization': `Bearer ${api.getAccessToken()}`
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
         });
         
@@ -358,7 +351,7 @@ async function loadUserProfile(userId) {
         // Fetch user posts
         const postsResponse = await fetch(`${API_BASE_URL}/users/${userId}/posts`, {
             headers: {
-                'Authorization': `Bearer ${api.getAccessToken()}`
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
             }
         });
         
@@ -417,9 +410,9 @@ function createProfilePostItem(post) {
     const item = document.createElement('div');
     item.className = 'profile-post-item';
     
-    if (post.media_url) {
+  if (post.blob_url) {
         let mediaHtml;
-        if (post.media_type === 'image') {
+        if (post.content_type.startsWith('image/')) {
             mediaHtml = `<img src="${post.media_url}" alt="Post" class="profile-post-image">`;
         } else if (post.media_type === 'video') {
             mediaHtml = `<video src="${post.media_url}" class="profile-post-image"></video>`;
@@ -446,13 +439,13 @@ function createPostCard(post) {
     
     // Build media HTML if exists
     let mediaHtml = '';
-    if (post.media_url) {
-        if (post.media_type === 'image') {
-            mediaHtml = `<div class="post-media"><img src="${post.media_url}" alt="Post media"></div>`;
-        } else if (post.media_type === 'video') {
-            mediaHtml = `<div class="post-media"><video src="${post.media_url}" controls></video></div>`;
-        }
+    if (post.blob_url) {
+    if (post.content_type.startsWith('image/')) {
+        mediaHtml = `<div class="post-media"><img src="${post.blob_url}" alt="Post media"></div>`;
+    } else if (post.content_type.startsWith('video/')) {
+        mediaHtml = `<div class="post-media"><video src="${post.blob_url}" controls></video></div>`;
     }
+}
     
     card.innerHTML = `
         <div class="post-header">
@@ -466,7 +459,7 @@ function createPostCard(post) {
             </div>
         </div>
         ${mediaHtml}
-        <div class="post-content">${escapeHtml(post.content)}</div>
+        <div class="post-content">${escapeHtml(post.caption || '')}</div>
         <div class="post-footer">
             <button class="post-action" title="Like">
                 ❤️ <span>${post.likes_count || 0}</span>

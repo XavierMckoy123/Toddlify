@@ -22,44 +22,47 @@ class APIClient {
     }
 
     async request(endpoint, options = {}) {
-        const url = `${this.baseUrl}${endpoint}`;
-        const headers = {
-            'Content-Type': 'application/json',
-            ...options.headers,
-        };
+    const url = `${this.baseUrl}${endpoint}`;
 
-        // Add auth token if it exists
-        const token = this.getAccessToken();
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
+    const headers = {
+        ...options.headers,
+    };
 
-        const response = await fetch(url, {
-            ...options,
-            headers,
-        });
-
-        // Handle 401 - token expired or invalid
-        if (response.status === 401) {
-            this.clearTokens();
-            window.location.href = '/login.html';
-            throw new Error('Session expired. Please log in again.');
-        }
-
-        let data;
-            try {
-                data = await response.json();
-            } catch {
-                throw new Error("Invalid server response");
-}
-
-        if (!response.ok) {
-            throw new Error(data.detail || `HTTP ${response.status}`);
-        }
-
-        return data;
+    // ✅ ONLY set JSON header if NOT sending FormData
+    if (!(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
     }
 
+    // Add auth token
+    const token = this.getAccessToken();
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+        ...options,
+        headers,
+    });
+
+    if (response.status === 401) {
+        this.clearTokens();
+        window.location.href = '/login.html';
+        throw new Error('Session expired. Please log in again.');
+    }
+
+    let data;
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("Invalid server response");
+    }
+
+    if (!response.ok) {
+        throw new Error(data.detail || `HTTP ${response.status}`);
+    }
+
+    return data;
+}
     // Auth endpoints
     async signup(email, username, password, firstName = null, lastName = null) {
         return this.request('/auth/signup', {

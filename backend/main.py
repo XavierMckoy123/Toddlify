@@ -6,6 +6,7 @@ from typing import Optional, List
 from config import FRONTEND_URL
 from database import get_db, init_db
 from models import User, Post
+from fastapi import Form
 from schemas import (
     UserSignup, UserLogin, Token, TokenRefresh, UserResponse,
     PostCreate, PostResponse, PostListResponse, FileUploadResponse
@@ -161,7 +162,7 @@ async def refresh_access_token(token_data: TokenRefresh, db: Session = Depends(g
 @app.post("/api/posts/upload", response_model=FileUploadResponse, status_code=201)
 async def upload_post(
     file: UploadFile = File(...),
-    caption: Optional[str] = None,
+    caption: Optional[str] = Form(None),  # ✅ FIXED
     current_user_id: str = Depends(get_user_id_from_token),
     db: Session = Depends(get_db)
 ):
